@@ -36,13 +36,13 @@ ai-ml-renewable-energy-platform/
 ├── app.py          # FastAPI application
 ├── requirements.txt# Dependencies
 └── README.md       # Project documentation
-##
-📈 Roadmap
+
+##📈 Roadmap
 [x] Phase 1: Power Forecasting – Completed.
 
 [ ] Phase 2: Predictive Maintenance – Planned.
 
 [ ] Phase 3: Anomaly Detection – Planned.
 
-🧑‍💻 Author
+##🧑‍💻 Author
 Lalit Chaudhari AI/ML Engineer 
