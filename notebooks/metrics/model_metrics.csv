@@ -1,0 +1,2 @@
+timestamp,model,MAE,RMSE
+2026-02-03 16:47:08.112012,XGBoost,0.88,2.42
