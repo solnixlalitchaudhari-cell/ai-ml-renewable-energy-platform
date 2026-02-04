@@ -60,3 +60,71 @@ def predict(data: SolarInput):
     return {
         "prediction": float(prediction[0])
     }
+
+
+##Predictive Maintenance
+import os
+import joblib
+import numpy as np
+
+# Get project root directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Load PdM features
+pdm_features = joblib.load(
+    os.path.join(
+        BASE_DIR,
+        "phase_2_predictive_maintenance",
+        "models",
+        "pdm_features.pkl"
+    )
+)
+
+# Load PdM model
+pdm_model = joblib.load(
+    os.path.join(
+        BASE_DIR,
+        "phase_2_predictive_maintenance",
+        "models",
+        "pdm_isolation_forest.pkl"
+    )
+)
+
+from pydantic import BaseModel
+
+class PdMInput(BaseModel):
+    DC_POWER: float
+    AC_POWER: float
+    ac_lag_1: float
+    ac_lag_24: float
+    dc_lag_1: float
+    dc_lag_24: float
+    ac_roll_mean_6: float
+    dc_roll_mean_6: float
+    
+    
+@app.post("/detect-anomaly")
+def detect_anomaly(data: PdMInput):
+
+    # 🔴 Rule-based safety check (industry standard)
+    if data.DC_POWER > 3000 and data.AC_POWER < 100:
+        return {
+            "status": "Abnormal behavior detected",
+            "action": "Check inverter / system health (rule-based)"
+        }
+
+    # 🧠 ML-based anomaly detection
+    X = np.array([[getattr(data, feature) for feature in pdm_features]])
+    prediction = pdm_model.predict(X)[0]
+
+    if prediction == -1:
+        return {
+            "status": "Abnormal behavior detected",
+            "action": "Check inverter / system health (ML-based)"
+        }
+    else:
+        return {
+            "status": "Normal operation",
+            "action": "No action required"
+        }
+
