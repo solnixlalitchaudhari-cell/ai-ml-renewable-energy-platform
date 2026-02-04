@@ -1,56 +1,147 @@
-# AI/ML Renewable Energy Platform ☀️🌬️
+AI/ML Renewable Energy Platform
 
-[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
-[![XGBoost](https://img.shields.io/badge/Model-XGBoost-orange.svg)](https://xgboost.readthedocs.io/)
-[![Status](https://img.shields.io/badge/Status-Phase%201%20Complete-success.svg)]()
+An industry-oriented AI/ML platform for solar and wind energy operations, designed to reduce uncertainty in power generation and build a scalable foundation for advanced renewable intelligence.
 
-An industry-oriented AI/ML platform for **solar and wind energy operations**, designed to reduce uncertainty in power generation and build a scalable foundation for advanced renewable intelligence.
+This project was developed as part of an AI/ML research internship and follows real-world engineering and MLOps practices.
 
-> Developed as part of an **AI/ML Research Internship** focusing on real-world MLOps practices and production-grade deployment.
+Project Overview
 
----
+Renewable energy generation is highly dependent on weather conditions, equipment health, and grid constraints. Traditional rule-based systems struggle to scale and adapt to this variability.
 
-## 📌 Project Overview
-Renewable energy generation is highly volatile. This platform bridges the gap between raw SCADA weather data and actionable operational insights. By using **Gradient Boosting** and **Deep Learning**, we provide high-accuracy power forecasts to help grid operators minimize imbalance penalties.
+This platform uses machine learning and deep learning to:
 
-### 🏗️ Architecture Flow
-```mermaid
-graph LR
-    A[Weather/SCADA Data] --> B[Feature Engineering]
-    B --> C{ML Model Engine}
-    C --> D[Power Prediction]
-    D --> E[FastAPI Endpoint]
-    E --> F[Energy Management Systems]
+Predict renewable power generation
 
-✅ Current Features (Phase 1)
-Solar Power Forecasting: Predicts AC power output based on irradiance, temperature, and historical patterns.
+Enable data-driven operational decisions
 
-Model Benchmarking: Comparative analysis between XGBoost and LSTM, selecting the optimal balance of latency and accuracy.
+Provide a foundation for maintenance, anomaly detection, and optimization modules
 
-Production API: A fully functional FastAPI wrapper for real-time inference.
+The current implementation focuses on the power forecasting module, which serves as the backbone for all future stages.
 
-Schema Preservation: Feature scaling and schema mapping saved as artifacts for consistent "Train-Serve" pipelines.
+Problems Addressed
 
-🧠 Tech Stack
-Category,Tools
-Language,Python 3.9+
-Machine Learning,"XGBoost, Scikit-learn"
-Deep Learning,TensorFlow / Keras (LSTM Baseline)
-API Framework,"FastAPI, Uvicorn"
-Data Handling,"Pandas, NumPy, Joblib"
+Inaccurate solar power forecasts leading to grid imbalance penalties
 
-📈 Model Performance SummaryAfter extensive testing, XGBoost was selected for production due to its superior handling of structured tabular data.ModelMAE (Mean Absolute Error)RMSE (Root Mean Squared Error)DecisionXGBoost0.0420.061SelectedLSTM0.0890.112Baseline🚀 Getting Started1. InstallationBashgit clone [https://github.com/your-username/ai-ml-renewable-energy-platform.git](https://github.com/your-username/ai-ml-renewable-energy-platform.git)
-cd ai-ml-renewable-energy-platform
-pip install -r requirements.txt
-2. Run the APIBashuvicorn app:app --reload
-The API documentation will be available at http://127.0.0.1:8000/docs.3. Sample PredictionBashcurl -X 'POST' \
-  '[http://127.0.0.1:8000/predict](http://127.0.0.1:8000/predict)' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "ambient_temperature": 25.4,
-  "module_temperature": 38.2,
-  "irradiance": 0.75
-}'
-📅 Future Roadmap[ ] Phase 2: Predictive Maintenance (RUL - Remaining Useful Life)[ ] Phase 3: Unsupervised Anomaly Detection for sensor faults.[ ] Phase 4: LLM-based Analytics (Natural language queries for plant health).👤 AuthorLalit Chaudhari Data Scientist | ML & Deep Learning Enthusiast LinkedIn | PortfolioLicense: Educational and Research purposes.
-**Would you like me to generate the "Phase 2" folder structure so you can start organizing t
+Limited visibility into short-term power generation
+
+Lack of scalable, reusable AI solutions across multiple sites
+
+Gap between experimental ML models and production-ready systems
+
+Current Features (Phase 1 – Completed)
+
+Power Forecasting
+
+Predicts AC power output of a solar plant based on historical patterns
+
+Uses industry-relevant evaluation metrics such as MAE and RMSE
+
+Model Development and Comparison
+
+Implemented and compared XGBoost and LSTM models
+
+Selected the final model based on accuracy and stability
+
+Production Readiness (MLOps)
+
+Model artifacts versioned and saved
+
+Feature schema preserved to ensure consistent inference
+
+Retraining strategy defined for seasonal and data drift
+
+Real-Time Inference API
+
+Deployed using FastAPI
+
+Provides a /predict endpoint for real-time usage
+
+Easily integrable with dashboards or energy management systems
+
+Project Structure
+
+ai-ml-renewable-energy-platform
+│
+├── data
+│ ├── raw (not committed)
+│ └── processed
+│
+├── models
+│ ├── xgb_solar_model.pkl
+│ └── xgb_features.pkl
+│
+├── notebooks
+│ ├── 01_data_cleaning.ipynb
+│ ├── 02_xgboost_model.ipynb
+│ ├── 03_lstm_model.ipynb
+│ └── 04_model_comparison.ipynb
+│
+├── metrics
+│ └── model_metrics.csv
+│
+├── app.py
+├── requirements.txt
+├── README.md
+└── .gitignore
+
+Tech Stack
+
+Python
+
+XGBoost, Scikit-learn
+
+LSTM (TensorFlow / Keras)
+
+FastAPI
+
+Pandas, NumPy
+
+Joblib for model versioning
+
+Model Performance Summary
+
+XGBoost achieved lower MAE and RMSE compared to LSTM and was selected for production due to its stability and reliability on structured SCADA data.
+
+API Usage
+
+Run the API using:
+uvicorn app:app --reload
+
+Open in browser:
+http://127.0.0.1:8000/docs
+
+Sample response:
+Prediction value represents the estimated AC power output for the given input conditions.
+
+Future Roadmap
+
+Predictive Maintenance
+
+Anomaly Detection
+
+Asset Optimization and Energy Yield Improvement
+
+Smart Grid Integration
+
+LLM-based Analytics and Reporting
+
+Digital Twin and Advanced Optimization
+
+Project Status
+
+Phase 1: Power Forecasting – Completed
+Phase 2: Predictive Maintenance – Planned
+Phase 3: Anomaly Detection and Optimization – Planned
+
+Notes
+
+This repository represents a modular AI platform rather than a one-off experiment. The forecasting module is production-ready and forms the foundation for future expansion.
+
+Author
+
+Lalit Chaudhari
+AI/ML Engineer – Renewable Energy and Data Science
+
+License
+
+This project is intended for educational, research, and internship demonstration purposes.
