@@ -36,7 +36,7 @@ ai-ml-renewable-energy-platform/
 ├── app.py          # FastAPI application
 ├── requirements.txt# Dependencies
 └── README.md       # Project documentation
-
+##
 📈 Roadmap
 [x] Phase 1: Power Forecasting – Completed.
 
