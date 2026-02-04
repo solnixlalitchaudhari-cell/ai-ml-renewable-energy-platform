@@ -1,52 +1,48 @@
-AI/ML Renewable Energy Platform
+☀️ AI/ML Renewable Energy Platform
+Scalable Power Forecasting & Intelligence for Solar & Wind Operations
+Renewable energy generation is inherently volatile, dictated by fluctuating weather patterns and hardware efficiency. This platform provides a production-ready AI framework designed to mitigate this variability through high-accuracy power forecasting and scalable MLOps practices.
 
-An industry-oriented AI/ML platform for solar and wind energy operations, focused on accurate power forecasting and scalable renewable intelligence.
+Developed as part of an AI/ML Research Internship, this project bridges the gap between experimental data science and industrial deployment.
 
-This project was developed as part of an AI/ML research internship using real-world engineering and MLOps practices.
+🚀 Key Features (Phase 1)
+Multi-Model Forecasting: Implementation of both Gradient Boosting (XGBoost) and Deep Learning (LSTM) architectures to capture both tabular features and temporal dependencies.
 
-Overview
+Production-Grade API: Real-time inference engine built with FastAPI, designed for low-latency integration with energy management systems.
 
-Renewable energy generation is highly variable due to weather and operational conditions. This project addresses that challenge by building a production-ready AI system to predict solar power generation and support data-driven decision making.
+Engineering Rigor: Built-in model versioning, feature consistency checks, and a structured retraining strategy to handle data drift.
 
-The current phase implements the power forecasting module, which serves as the foundation for future expansion.
+Performance Benchmarking: Comparative evaluation using MAE and RMSE to ensure the most reliable model is deployed.
 
-Current Features (Phase 1)
+🛠️ Tech Stack
+Languages & Core: Python, NumPy, Pandas
 
-Power Forecasting – Predicts AC power output of a solar plant
+Machine Learning: XGBoost, Scikit-learn
 
-Model Comparison – XGBoost vs LSTM, evaluated using MAE & RMSE
+Deep Learning: TensorFlow/Keras (LSTM)
 
-Production Readiness – Model versioning, feature consistency, retraining strategy
+Deployment: FastAPI, Uvicorn
 
-API Deployment – Real-time inference using FastAPI
+Environment: MLOps best practices, requirements management
 
-Tech Stack
-
-Python, XGBoost, LSTM, FastAPI, Pandas, NumPy, Scikit-learn
-
-Project Structure
+📂 Project Structure
+Bash
 ai-ml-renewable-energy-platform/
-├── data/
-├── models/
-├── notebooks/
-├── metrics/
-├── app.py
-├── requirements.txt
-└── README.md
+├── data/           # Raw and processed datasets (time-series)
+├── models/         # Serialized model binaries (.pkl, .h5)
+├── notebooks/      # EDA, feature engineering, and model training logs
+├── metrics/        # Model evaluation reports and visualization
+├── app.py          # FastAPI application for real-time inference
+├── requirements.txt# Project dependencies
+└── README.md       # Project documentation
+📈 Roadmap
+[x] Phase 1: Power Forecasting – Accurate prediction of AC output based on irradiance and weather telemetry.
 
-Status & Roadmap
+[ ] Phase 2: Predictive Maintenance – Identifying hardware degradation (soiling, inverter issues) before failure.
 
-Phase 1: Power Forecasting – Completed
+[ ] Phase 3: Anomaly Detection – Real-time monitoring for grid instability and sensor malfunctions.
 
-Phase 2: Predictive Maintenance – Planned
+🧑‍💻 Author
+Lalit Chaudhari AI/ML Engineer – Renewable Energy & Data Science
 
-Phase 3: Anomaly Detection & Optimization – Planned
-
-Author
-
-Lalit Chaudhari
-AI/ML Engineer – Renewable Energy & Data Science
-
-License
-
-For educational, research, and internship demonstration purposes.
+⚖️ License
+This project is released for educational, research, and internship demonstration purposes.
