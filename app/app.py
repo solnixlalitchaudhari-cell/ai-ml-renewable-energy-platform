@@ -128,3 +128,35 @@ def detect_anomaly(data: PdMInput):
             "action": "No action required"
         }
 
+class OptimizationInput(BaseModel):
+    AC_POWER: float
+    expected_ac_power: float
+    DC_POWER: float
+
+@app.post("/optimize-yield")
+def optimize_yield(data: OptimizationInput):
+
+    # Energy loss calculation
+    energy_loss = data.expected_ac_power - data.AC_POWER
+
+    # PdM fault check (same logic as Phase 2)
+    pdm_fault = (data.DC_POWER > 3000) and (data.AC_POWER < 100)
+
+    # Optimization logic
+    if pdm_fault:
+        return {
+            "status": "Maintenance issue detected",
+            "action": "Fix system before optimization"
+        }
+
+    if energy_loss > 200:   # heuristic threshold
+        return {
+            "status": "Energy loss detected",
+            "action": "Panel cleaning recommended"
+        }
+
+    return {
+        "status": "Optimal performance",
+        "action": "No action required"
+    }
+
