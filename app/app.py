@@ -4,6 +4,8 @@ import pandas as pd
 import joblib
 import os
 
+
+
 # -------------------------------
 # Path handling (VERY IMPORTANT)
 # -------------------------------
@@ -45,7 +47,7 @@ def home():
 # -------------------------------
 # Prediction endpoint
 # -------------------------------
-@app.post("/predict")
+@app.post("/predict-power")
 def predict(data: SolarInput):
 
     # Convert input to DataFrame
@@ -102,7 +104,7 @@ class PdMInput(BaseModel):
     ac_roll_mean_6: float
     dc_roll_mean_6: float
     
-    
+
 @app.post("/detect-anomaly")
 def detect_anomaly(data: PdMInput):
 
@@ -114,7 +116,12 @@ def detect_anomaly(data: PdMInput):
         }
 
     # 🧠 ML-based anomaly detection
-    X = np.array([[getattr(data, feature) for feature in pdm_features]])
+    import pandas as pd
+
+    X = pd.DataFrame(
+    [[getattr(data, feature) for feature in pdm_features]],
+    columns=pdm_features)
+
     prediction = pdm_model.predict(X)[0]
 
     if prediction == -1:
