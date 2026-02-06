@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import pandas as pd
 import joblib
 import os
+from fastapi.middleware.cors import CORSMiddleware
 
 
 
@@ -28,6 +29,15 @@ app = FastAPI(title="Solar Power Prediction API")
 # Input schema
 # (you can extend this later)
 # -------------------------------
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],   # allow all for now
+    allow_credentials=True,
+    allow_methods=["*"],   # allow POST, GET, OPTIONS
+    allow_headers=["*"],
+)
+
 class SolarInput(BaseModel):
     DC_POWER: float
     hour: int

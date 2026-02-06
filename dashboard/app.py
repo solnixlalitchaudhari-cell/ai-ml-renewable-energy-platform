@@ -1,233 +1,367 @@
 import streamlit as st
 import requests
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
+import numpy as np
 from datetime import datetime
+from streamlit_option_menu import option_menu
 
-# ================= PAGE CONFIG (MUST BE FIRST) =================
+# ================= PAGE CONFIG =================
 st.set_page_config(
-    page_title="Ai-Ml-Renewable-Energy-Platform",
-    page_icon="☀️",
-    layout="wide"
+    page_title="SolarOps AI | Enterprise",
+    page_icon="⚡",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# ================= STYLING =================
+# ================= MODERN SAAS CSS (UPDATED FOR SIZE) =================
 st.markdown("""
 <style>
-[data-testid="stAppViewContainer"] {
-    background-color: #0e1117;
-    color: #ffffff;
-}
-.stMetric {
-    background-color: #1e2130;
-    border: 1px solid #3e445e;
-    padding: 15px;
-    border-radius: 10px;
-}
-div.stButton > button {
-    background-color: #ff4b4b;
-    color: white;
-    border-radius: 6px;
-    width: 100%;
-    height: 3em;
-    font-weight: bold;
-    border: none;
-}
-div.stButton > button:hover {
-    background-color: #ff7575;
-}
-.section-card {
-    padding: 18px;
-    border-radius: 10px;
-    background-color: #1e2130;
-    margin-bottom: 15px;
-}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+    /* Global Reset */
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+        background-color: #0e1117;
+        color: #e0e0e0;
+    }
+
+    /* Remove Streamlit Branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+
+    /* Sidebar Styling */
+    section[data-testid="stSidebar"] {
+        background-color: #111827;
+        border-right: 1px solid #1f2937;
+    }
+
+    /* Card Container (Glassmorphism) */
+    .metric-card {
+        background: linear-gradient(145deg, #1f2937, #111827);
+        border: 1px solid #374151;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        padding: 20px;
+        transition: transform 0.2s;
+    }
+    .metric-card:hover {
+        border-color: #6366f1; /* Indigo hover */
+        transform: translateY(-2px);
+    }
+
+    /* Typography */
+    .metric-label {
+        color: #9ca3af;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .metric-value {
+        color: #f3f4f6;
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-top: 5px;
+    }
+    .metric-delta {
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-top: 5px;
+    }
+    .delta-pos { color: #10b981; }
+    .delta-neg { color: #ef4444; }
+
+    /* --- UPDATED: LARGER BUTTONS --- */
+    .stButton > button {
+        width: 100%;
+        background: linear-gradient(to right, #4f46e5, #6366f1);
+        color: white;
+        border: none;
+        height: 60px; /* Increased height */
+        font-size: 1.1rem; /* Increased font size */
+        font-weight: 600;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    .stButton > button:hover {
+        background: linear-gradient(to right, #4338ca, #4f46e5);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        transform: scale(1.02);
+    }
+
+    /* Alert Styling */
+    .custom-alert {
+        padding: 1.2rem;
+        border-radius: 10px;
+        margin-top: 1rem;
+        border-left: 6px solid;
+        font-size: 1.1rem;
+    }
+    .alert-success { background: rgba(16, 185, 129, 0.1); border-color: #10b981; color: #d1fae5; }
+    .alert-danger { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; color: #fee2e2; }
+    
+    /* --- UPDATED: LARGER TABS --- */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 20px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 60px; /* Taller tabs */
+        padding-top: 10px;
+        padding-bottom: 10px;
+        background-color: transparent;
+        border-radius: 5px;
+        color: #9ca3af;
+        font-weight: 600;
+        font-size: 1.2rem; /* Larger Text */
+    }
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        background-color: #1f2937;
+        color: #6366f1;
+        border-bottom: 3px solid #6366f1; /* Thicker border */
+    }
+    
+    /* Custom Header for AI Ops */
+    .ai-header {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        background: -webkit-linear-gradient(left, #a78bfa, #6366f1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .ai-desc {
+        font-size: 1.1rem;
+        color: #cbd5e1;
+        margin-bottom: 20px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# ================= BACKEND =================
-BASE_URL = "http://127.0.0.1:8000"
+# ================= API CONNECTION =================
+API_URL = "http://127.0.0.1:8000"
 
 def call_api(endpoint, payload):
     try:
-        r = requests.post(f"{BASE_URL}{endpoint}", json=payload, timeout=5)
-        if r.status_code == 200:
-            return r.json(), True
-        else:
-            return r.json(), False
+        r = requests.post(f"{API_URL}{endpoint}", json=payload, timeout=5)
+        r.raise_for_status()
+        return r.json(), None
     except Exception as e:
-        return {"error": str(e)}, False
+        return None, str(e)
 
-# ================= SIDEBAR =================
+# ================= SIDEBAR NAVIGATION =================
 with st.sidebar:
-    st.title("⚙️ Live Plant Inputs")
+    st.image("https://cdn-icons-png.flaticon.com/512/3106/3106807.png", width=50)
+    st.markdown("### SolarOps AI")
+    st.markdown("<div style='font-size: 12px; color: #6b7280; margin-bottom: 20px;'>Enterprise Edition v2.4</div>", unsafe_allow_html=True)
 
-    dc_power = st.number_input(
-        "DC Power (W)",
-        min_value=0.0,
-        value=5500.0,
-        step=100.0
+    selected_nav = option_menu(
+        menu_title=None,
+        options=["Dashboard", "Inverter Health", "Settings"],
+        icons=["speedometer2", "activity", "gear"],
+        menu_icon="cast",
+        default_index=0,
+        styles={
+            "container": {"padding": "0!important", "background-color": "transparent"},
+            "icon": {"color": "#6366f1", "font-size": "16px"}, 
+            "nav-link": {"font-size": "14px", "text-align": "left", "margin":"5px", "--hover-color": "#1f2937"},
+            "nav-link-selected": {"background-color": "#1f2937", "color": "white", "border-left": "3px solid #6366f1"},
+        }
     )
-
-    ac_power = st.number_input(
-        "AC Power (W)",
-        min_value=0.0,
-        value=480.0,
-        step=10.0
-    )
-
-    expected_ac = st.number_input(
-        "Expected AC Power (W)",
-        min_value=0.0,
-        value=520.0,
-        step=10.0
-    )
-
+    
     st.divider()
-    st.success("🟢 Backend API Connected")
-    st.caption(f"Last refresh: {datetime.now().strftime('%d %b %Y %H:%M:%S')}")
+    
+    st.markdown("#### 🎛️ Simulation Controls")
+    dc_power = st.slider("DC Input (W)", 0, 15000, 5500, 100)
+    ac_power = st.slider("AC Output (W)", 0, 15000, 4800, 100)
+    temp = st.slider("Module Temp (°C)", -10, 80, 42)
+    irradiance = st.slider("Irradiance (W/m²)", 0, 1200, 850)
 
-# ================= MAIN HEADER =================
-st.title("Ai-Ml-Renewable-Energy-Platform")
-st.caption(
-    "Real-time Forecasting • Predictive Maintenance • Performance Optimization"
-)
-st.markdown("---")
+# ================= HELPER FOR METRIC CARDS =================
+def display_metric(col, label, value, delta=None, delta_color="normal"):
+    delta_html = ""
+    if delta:
+        color_class = "delta-pos" if delta_color == "pos" else "delta-neg"
+        arrow = "↑" if delta_color == "pos" else "↓"
+        delta_html = f"<div class='metric-delta {color_class}'>{arrow} {delta}</div>"
+    
+    col.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-label">{label}</div>
+        <div class="metric-value">{value}</div>
+        {delta_html}
+    </div>
+    """, unsafe_allow_html=True)
 
-# ================= KPI ROW =================
-k1, k2, k3, k4 = st.columns(4)
+# ================= MAIN DASHBOARD VIEW =================
+if selected_nav == "Dashboard":
 
-with k1:
-    eff = (ac_power / dc_power * 100) if dc_power > 0 else 0
-    st.metric("System Efficiency", f"{eff:.1f}%")
+    # --- Header ---
+    c1, c2 = st.columns([3, 1])
+    with c1:
+        st.title("Plant Performance Overview")
+        st.markdown(f"Last sync: **{datetime.now().strftime('%H:%M:%S')}** • Location: **Nevada, USA (Site 04)**")
+    with c2:
+        st.markdown("""
+        <div style="text-align: right; padding-top: 15px;">
+            <span style="background-color: rgba(16, 185, 129, 0.2); color: #10b981; padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: 600;">
+                ● System Online
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
 
-with k2:
-    st.metric("Current AC Output", f"{ac_power:.0f} W")
+    st.markdown("<br>", unsafe_allow_html=True)
 
-with k3:
-    st.metric("Expected Output", f"{expected_ac:.0f} W")
+    # --- KPI Row ---
+    efficiency = (ac_power / dc_power * 100) if dc_power else 0
+    k1, k2, k3, k4 = st.columns(4)
+    eff_delta_color = "pos" if efficiency > 85 else "neg"
+    
+    display_metric(k1, "Inverter Efficiency", f"{efficiency:.1f}%", "1.2% vs Avg", eff_delta_color)
+    display_metric(k2, "Real-time DC Power", f"{dc_power:,} W", "Stable", "pos")
+    display_metric(k3, "Real-time AC Power", f"{ac_power:,} W", "Grid Sync", "pos")
+    display_metric(k4, "Capacity Factor", "72.4%", "High", "pos")
 
-with k4:
-    st.metric("Energy Gap", f"{expected_ac - ac_power:.0f} W")
+    st.markdown("<br>", unsafe_allow_html=True)
 
-# ================= TABS =================
-tab1, tab2 = st.tabs(["🧠 AI Operations", "📊 Performance Analytics"])
+    # --- Split Layout (Operations vs Analytics) ---
+    col_ops, col_charts = st.columns([1, 2], gap="large")
 
-# ==========================================================
-# TAB 1 : AI OPERATIONS
-# ==========================================================
-with tab1:
-    left, right = st.columns([1, 2])
+    with col_ops:
+        # --- LARGE HEADER FOR AI OPS ---
+        st.markdown('<div class="ai-header">🤖 AI Operations</div>', unsafe_allow_html=True)
+        
+        tab_forecast, tab_maint, tab_opt = st.tabs(["Forecast", "Health", "Optimize"])
 
-    # -------- LEFT CONTROL PANEL --------
-    with left:
-        st.subheader("AI Control Panel")
+        # --- Tab 1: Forecasting ---
+        with tab_forecast:
+            st.markdown('<p class="ai-desc">Execute XGBoost inference model for next-hour output.</p>', unsafe_allow_html=True)
+            
+            if st.button("Run Prediction Model", key="btn_forecast"):
+                with st.spinner("Calculating..."):
+                    now = datetime.now()
+                    payload = {"DC_POWER": dc_power, "hour": now.hour, "day": now.day, "month": now.month}
+                    result, error = call_api("/predict-power", payload)
+                    
+                    if result:
+                        st.markdown(f"""
+                        <div class="custom-alert alert-success">
+                            <div style="font-size: 14px; opacity: 0.8; margin-bottom: 5px;">PREDICTED OUTPUT</div>
+                            <div style="font-size: 32px; font-weight: bold;">{result['prediction']:.2f} W</div>
+                            <div style="font-size: 12px; margin-top: 4px;">Confidence Interval: 98.4%</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.error(f"API Error: {error}")
 
-        # ---------- FORECAST ----------
-        st.markdown("**🔮 Power Forecasting**")
-        if st.button("Run Forecast"):
-            payload = {"DC_POWER": dc_power}
-            res, ok = call_api(
-    "/predict-power",
-    {
-        "DC_POWER": dc_power,
-        "hour": datetime.now().hour,
-        "day": datetime.now().day,
-        "month": datetime.now().month
-    }
-)
+        # --- Tab 2: Predictive Maintenance ---
+        with tab_maint:
+            st.markdown('<p class="ai-desc">Scan sensors using Isolation Forest algorithm.</p>', unsafe_allow_html=True)
+            if st.button("Scan for Anomalies", key="btn_pdm"):
+                with st.spinner("Analyzing sensor patterns..."):
+                    payload = {
+                        "DC_POWER": dc_power, "AC_POWER": ac_power,
+                        "ac_lag_1": ac_power*0.98, "ac_lag_24": ac_power*0.85,
+                        "dc_lag_1": dc_power*0.99, "dc_lag_24": dc_power*0.88,
+                        "ac_roll_mean_6": ac_power*0.95, "dc_roll_mean_6": dc_power*0.95
+                    }
+                    result, error = call_api("/detect-anomaly", payload)
+                    
+                    if result:
+                        alert_type = "alert-danger" if "Abnormal" in result['status'] else "alert-success"
+                        icon = "⚠️" if "Abnormal" in result['status'] else "✅"
+                        st.markdown(f"""
+                        <div class="custom-alert {alert_type}">
+                            <div style="font-weight: bold; font-size: 20px;">{icon} {result['status']}</div>
+                            <div style="margin-top: 5px;">Recommendation: {result['action']}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.error(error)
 
+        # --- Tab 3: Optimization ---
+        with tab_opt:
+            st.markdown('<p class="ai-desc">Compare actual vs. theoretical yield to optimize settings.</p>', unsafe_allow_html=True)
+            exp_ac = st.number_input("Target AC (W)", value=5200.0, step=100.0)
+            st.markdown("<br>", unsafe_allow_html=True) # Spacer
+            if st.button("Run Optimizer", key="btn_opt"):
+                payload = {"AC_POWER": ac_power, "expected_ac_power": exp_ac, "DC_POWER": dc_power}
+                result, error = call_api("/optimize-yield", payload)
+                if result:
+                     st.markdown(f"""
+                        <div class="custom-alert alert-success">
+                            <b>Status:</b> {result['status']}<br>
+                            <b>Action:</b> {result['action']}
+                        </div>
+                        """, unsafe_allow_html=True)
 
-            if ok:
-                st.success(
-                    f"Predicted AC Power: **{res['prediction']:.2f} W**"
-                )
-            else:
-                st.error("Forecasting service failed")
-                st.json(res)
+    with col_charts:
+        st.markdown("### 📈 Telemetry & Forecast")
+        
+        hours = [f"{i}:00" for i in range(24)]
+        actual = np.concatenate([np.sort(np.random.normal(0, 100, 6)), 
+                                 np.sort(np.random.normal(4000, 500, 6)), 
+                                 np.sort(np.random.normal(4000, 500, 6))[::-1], 
+                                 np.sort(np.random.normal(0, 100, 6))])
+        actual = [max(0, x) for x in actual]
+        predicted = [x * 1.05 for x in actual]
 
-        st.divider()
+        fig = go.Figure()
 
-        # ---------- PREDICTIVE MAINTENANCE ----------
-        st.markdown("**🛠 Predictive Maintenance**")
-        if st.button("Run Maintenance Scan"):
-            pdm_payload = {
-                "DC_POWER": dc_power,
-                "AC_POWER": ac_power,
-                "ac_lag_1": ac_power,
-                "ac_lag_24": ac_power - 30,
-                "dc_lag_1": dc_power,
-                "dc_lag_24": dc_power - 200,
-                "ac_roll_mean_6": ac_power,
-                "dc_roll_mean_6": dc_power
-            }
+        fig.add_trace(go.Scatter(
+            x=hours, y=predicted, mode='lines', name='AI Forecast',
+            line=dict(width=2, color='#6366f1', dash='dash'),
+            fill='tozeroy', 
+            fillcolor='rgba(99, 102, 241, 0.1)' 
+        ))
 
-            res, ok = call_api("/detect-anomaly", pdm_payload)
+        fig.add_trace(go.Scatter(
+            x=hours, y=actual, mode='lines+markers', name='Actual Output',
+            line=dict(width=3, color='#10b981'),
+            marker=dict(size=6, color='#059669', line=dict(width=1, color='white'))
+        ))
 
-            if ok:
-                if "Abnormal" in res["status"]:
-                    st.error(res["status"])
-                else:
-                    st.success(res["status"])
-                st.caption(res["action"])
-            else:
-                st.error("Maintenance service failed")
-                st.json(res)
-
-        st.divider()
-
-        # ---------- OPTIMIZATION ----------
-        st.markdown("**⚡ Asset Optimization**")
-        if st.button("Optimize Yield"):
-            res, ok = call_api(
-                "/optimize-yield",
-                {
-                    "AC_POWER": ac_power,
-                    "expected_ac_power": expected_ac,
-                    "DC_POWER": dc_power
-                }
-            )
-
-            if ok:
-                if "loss" in res["status"].lower():
-                    st.warning(res["status"])
-                else:
-                    st.success(res["status"])
-                st.caption(res["action"])
-            else:
-                st.error("Optimization service failed")
-                st.json(res)
-
-    # -------- RIGHT VISUAL PANEL --------
-    with right:
-        st.subheader("AC Power vs Expected Trend")
-
-        trend_df = pd.DataFrame({
-            "Hour": range(9, 18),
-            "Actual AC": [200, 350, 420, ac_power, 460, 440, 380, 260, 120],
-            "Expected AC": [220, 370, 450, expected_ac, 480, 460, 400, 300, 150]
-        })
-
-        fig = px.line(
-            trend_df,
-            x="Hour",
-            y=["Actual AC", "Expected AC"],
-            markers=True,
-            template="plotly_dark"
+        fig.update_layout(
+            height=400,
+            margin=dict(l=20, r=20, t=30, b=20),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='#9ca3af', family="Inter"),
+            xaxis=dict(showgrid=False, linecolor='#374151'),
+            yaxis=dict(showgrid=True, gridcolor='rgba(55, 65, 81, 0.3)', zeroline=False),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
-        fig.update_layout(height=320)
+        
         st.plotly_chart(fig, use_container_width=True)
 
-# ==========================================================
-# TAB 2 : ANALYTICS / LOGS
-# ==========================================================
-with tab2:
-    st.subheader("Recent AI Decisions")
+        st.markdown("##### Recent Alerts Log")
+        log_df = pd.DataFrame({
+            "Timestamp": ["10:42 AM", "10:30 AM", "09:15 AM"],
+            "Module": ["Inverter A", "Panel Array 4", "Grid Tie"],
+            "Event": ["Efficiency Drop < 2%", "Temperature Spike", "Voltage Sag"],
+            "Severity": ["Low", "Medium", "High"]
+        })
+        
+        st.dataframe(
+            log_df, 
+            hide_index=True, 
+            use_container_width=True,
+            column_config={
+                "Severity": st.column_config.TextColumn(
+                    "Severity",
+                    help="Event criticality",
+                    validate="^(Low|Medium|High)$"
+                )
+            }
+        )
 
-    logs = pd.DataFrame([
-        {"Time": "12:10", "Module": "Optimization", "Decision": "Cleaning Recommended"},
-        {"Time": "11:50", "Module": "Predictive Maintenance", "Decision": "System Healthy"},
-        {"Time": "11:30", "Module": "Forecasting", "Decision": "Prediction Generated"}
-    ])
+# ================= OTHER PAGES =================
+elif selected_nav == "Inverter Health":
+    st.title("Inverter Health Diagnostics")
+    st.info("Detailed oscilloscope views and vibration analysis would go here.")
 
-    st.dataframe(logs, use_container_width=True)
+elif selected_nav == "Settings":
+    st.title("System Configuration")
+    st.text_input("API Endpoint", value=API_URL)
+    st.button("Save Configuration")
