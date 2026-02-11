@@ -15,6 +15,7 @@ load_dotenv()
 
 ENV = os.getenv("ENV", "development")
 API_KEY = os.getenv("API_KEY")
+COST_PER_KWH = float(os.getenv("COST_PER_KWH", 6.5))
 
 if API_KEY is None:
     raise RuntimeError("API_KEY not set in environment")
@@ -27,7 +28,7 @@ def verify_api_key(x_api_key: str = Header(..., alias="X-API-KEY")):
         raise HTTPException(status_code=401, detail="Invalid API Key")
 
 # ===============================
-# PHASE 4 – LOGGING
+# LOGGING
 # ===============================
 from phase_4_mlops.logging.logger import log_prediction
 
@@ -64,47 +65,39 @@ METADATA_PATH = os.path.join(
 with open(METADATA_PATH, "r") as f:
     metadata = json.load(f)
 
+FORECAST_MODEL_NAME = metadata["forecasting_model"]
+
 # ===============================
 # LOAD FORECASTING MODEL
 # ===============================
-FORECAST_MODEL_NAME = metadata["forecasting_model"]
-
-FORECAST_MODEL_PATH = os.path.join(
-    BASE_DIR,
-    "models",
-    "forecasting",
-    f"{FORECAST_MODEL_NAME}.pkl"
+forecast_model = joblib.load(
+    os.path.join(BASE_DIR, "models", "forecasting", f"{FORECAST_MODEL_NAME}.pkl")
 )
 
-FORECAST_FEATURES_PATH = os.path.join(
-    BASE_DIR,
-    "models",
-    "forecasting",
-    "xgb_features_v1.pkl"
+FORECAST_FEATURES = joblib.load(
+    os.path.join(BASE_DIR, "models", "forecasting", "xgb_features_v1.pkl")
 )
-
-forecast_model = joblib.load(FORECAST_MODEL_PATH)
-FORECAST_FEATURES = joblib.load(FORECAST_FEATURES_PATH)
 
 # ===============================
 # LOAD PdM MODEL
 # ===============================
-PDM_MODEL_PATH = os.path.join(
-    BASE_DIR,
-    "phase_2_predictive_maintenance",
-    "models",
-    "pdm_isolation_forest.pkl"
+pdm_model = joblib.load(
+    os.path.join(
+        BASE_DIR,
+        "phase_2_predictive_maintenance",
+        "models",
+        "pdm_isolation_forest.pkl"
+    )
 )
 
-PDM_FEATURES_PATH = os.path.join(
-    BASE_DIR,
-    "phase_2_predictive_maintenance",
-    "models",
-    "pdm_features.pkl"
+pdm_features = joblib.load(
+    os.path.join(
+        BASE_DIR,
+        "phase_2_predictive_maintenance",
+        "models",
+        "pdm_features.pkl"
+    )
 )
-
-pdm_model = joblib.load(PDM_MODEL_PATH)
-pdm_features = joblib.load(PDM_FEATURES_PATH)
 
 # ===============================
 # FASTAPI APP
@@ -129,7 +122,7 @@ def root():
     }
 
 # ===============================
-# HEALTH CHECK (PROTECTED)
+# HEALTH CHECK
 # ===============================
 @app.get("/health", dependencies=[Depends(verify_api_key)])
 def health_check():
@@ -138,8 +131,8 @@ def health_check():
         "environment": ENV,
         "uptime_seconds": (datetime.utcnow() - START_TIME).total_seconds(),
         "forecast_model": FORECAST_MODEL_NAME,
-        "forecast_model_loaded": forecast_model is not None,
-        "pdm_model_loaded": pdm_model is not None,
+        "forecast_model_loaded": True,
+        "pdm_model_loaded": True,
         "last_prediction_time": (
             LAST_PREDICTION_TIME.isoformat()
             if LAST_PREDICTION_TIME else None
@@ -182,7 +175,6 @@ def predict_power(data: SolarInput):
     df = df.reindex(columns=FORECAST_FEATURES, fill_value=0)
 
     prediction = forecast_model.predict(df)[0]
-
     drift_detected = check_drift("DC_POWER", data.DC_POWER)
 
     log_prediction(
@@ -207,7 +199,6 @@ def detect_anomaly(data: PdMInput):
     global LAST_PREDICTION_TIME
     LAST_PREDICTION_TIME = datetime.utcnow()
 
-    # Rule-based safety
     if data.DC_POWER > 3000 and data.AC_POWER < 100:
         prediction = -1
         status = "abnormal_rule"
@@ -241,7 +232,7 @@ def optimize_yield(data: OptimizationInput):
     global LAST_PREDICTION_TIME
     LAST_PREDICTION_TIME = datetime.utcnow()
 
-    energy_loss = data.expected_ac_power - data.AC_POWER
+    energy_loss = max(0, data.expected_ac_power - data.AC_POWER)
 
     status = "optimal"
     action = "No action required"
@@ -262,4 +253,51 @@ def optimize_yield(data: OptimizationInput):
     return {
         "status": status,
         "action": action
+    }
+
+# ===============================
+# PHASE 5 – BUSINESS IMPACT
+# ===============================
+@app.post("/business-impact", dependencies=[Depends(verify_api_key)])
+def business_impact(data: OptimizationInput):
+    global LAST_PREDICTION_TIME
+    LAST_PREDICTION_TIME = datetime.utcnow()
+
+    energy_loss_kwh = max(0, data.expected_ac_power - data.AC_POWER)
+
+    hourly_loss = energy_loss_kwh * COST_PER_KWH
+    daily_loss = hourly_loss * 10
+    annual_loss = daily_loss * 365
+
+    if annual_loss > 500000:
+        roi_level = "CRITICAL"
+        recommendation = "Immediate maintenance required"
+    elif annual_loss > 200000:
+        roi_level = "HIGH"
+        recommendation = "Schedule optimization within 7 days"
+    elif annual_loss > 50000:
+        roi_level = "MODERATE"
+        recommendation = "Monitor system performance"
+    else:
+        roi_level = "LOW"
+        recommendation = "System operating efficiently"
+
+    log_prediction(
+        endpoint="business-impact",
+        dc_power=data.DC_POWER,
+        ac_power=data.AC_POWER,
+        prediction=annual_loss,
+        status=roi_level.lower(),
+        model_version="phase_5_business_logic_v1"
+    )
+
+    return {
+        "financial_summary": {
+            "hourly_loss_rupees": round(hourly_loss, 2),
+            "daily_loss_rupees": round(daily_loss, 2),
+            "annual_loss_rupees": round(annual_loss, 2)
+        },
+        "roi_assessment": roi_level,
+        "executive_recommendation": recommendation,
+        "cost_per_kwh_used": COST_PER_KWH
     }
