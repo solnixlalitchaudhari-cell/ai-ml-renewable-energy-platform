@@ -1,0 +1,12 @@
+
+services:
+  solarops-api:
+    build: .
+    container_name: solarops_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./phase_4_mlops/logs:/app/phase_4_mlops/logs
+    env_file:
+      - .env
+    restart: always

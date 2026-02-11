@@ -1,0 +1,18 @@
+#! solarops-api-C:\Users\lalit\Desktop\solar_wind_ai_project\phase_4_mlops\logs-persistentVolumeClaim.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+    name: solarops-api-c--users-lalit-desktop-solar-wind-ai-project-phase-4-mlops-logs
+    namespace: solar-wind-ai-project
+    labels:
+        com.docker.compose.service: solarops-api
+        com.docker.compose.volume: C:\Users\lalit\Desktop\solar_wind_ai_project\phase_4_mlops\logs
+spec:
+    accessModes:
+        # TODO would need to check which services use this volume
+        - ReadWriteOnce
+    volumeMode: Filesystem
+    resources:
+        requests:
+            storage: 100Mi

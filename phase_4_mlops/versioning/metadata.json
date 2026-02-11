@@ -1,0 +1,6 @@
+{
+  "forecasting_model": "xgb_v1",
+  "pdm_model": "isolation_forest_v1",
+  "created_on": "2026-02-09",
+  "owner": "Lalit Chaudhari"
+}

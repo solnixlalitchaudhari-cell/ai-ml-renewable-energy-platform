@@ -3,3 +3,10 @@ __pycache__/
 .env
 *.pkl
 data/raw/*
+__pycache__/
+*.pyc
+.env
+*.pkl
+*.log
+*.csv
+.DS_Store

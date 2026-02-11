@@ -1,0 +1,11 @@
+#! kustomization.yaml
+# Generated code, do not edit
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+    - 0-solar-wind-ai-project-namespace.yaml
+    - default-network-policy.yaml
+    - solarops-api-C:\Users\lalit\Desktop\solar_wind_ai_project\phase_4_mlops\logs-persistentVolumeClaim.yaml
+    - solarops-api-deployment.yaml
+    - solarops-api-expose.yaml
+    - solarops-api-service.yaml

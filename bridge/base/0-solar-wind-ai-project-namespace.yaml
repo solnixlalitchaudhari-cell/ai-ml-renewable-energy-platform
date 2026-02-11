@@ -1,0 +1,8 @@
+#! 0-solar-wind-ai-project-namespace.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: Namespace
+metadata:
+    name: solar-wind-ai-project
+    labels:
+        com.docker.compose.project: solar_wind_ai_project

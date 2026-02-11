@@ -8,3 +8,6 @@ uvicorn
 matplotlib
 seaborn
 tensorflow
+python-multipart
+python-dotenv
+

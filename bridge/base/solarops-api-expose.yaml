@@ -1,0 +1,18 @@
+#! solarops-api-expose.yaml
+# Generated code, do not edit
+apiVersion: v1
+kind: Service
+metadata:
+    name: solarops-api
+    namespace: solar-wind-ai-project
+    labels:
+        com.docker.compose.project: solar_wind_ai_project
+        com.docker.compose.service: solarops-api
+spec:
+    selector:
+        com.docker.compose.project: solar_wind_ai_project
+        com.docker.compose.service: solarops-api
+    ports:
+        - name: solarops-a-8000
+          port: 8000
+          targetPort: solarops-a-8000
