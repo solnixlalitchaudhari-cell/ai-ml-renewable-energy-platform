@@ -1,14 +1,4 @@
 
----
-title: SolarOps AI Platform
-emoji: ⚡
-colorFrom: blue
-colorTo: green
-sdk: gradio
-app_file: app/app.py
-pinned: false
----
-
 # ☀️ AI/ML Renewable Energy Platform
 ## Scalable Power Forecasting & Intelligence for Solar & Wind Operations
 
