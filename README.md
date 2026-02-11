@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ☀️ AI/ML Renewable Energy Platform
 ## Scalable Power Forecasting & Intelligence for Solar & Wind Operations
 
@@ -46,3 +47,15 @@ ai-ml-renewable-energy-platform/
 
 ##🧑‍💻 Author
 Lalit Chaudhari AI/ML Engineer 
+=======
+---
+title: Solarops Ai Platform
+emoji: ⚡
+colorFrom: red
+colorTo: purple
+sdk: docker
+pinned: false
+---
+
+Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+>>>>>>> d85c2008da50a60721730a1e64ac6ba990a54cd9
