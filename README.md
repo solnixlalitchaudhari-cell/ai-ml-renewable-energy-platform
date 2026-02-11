@@ -1,3 +1,12 @@
+---
+title: Solarops Ml Platform
+emoji: ⚡
+colorFrom: green
+colorTo: blue
+sdk: docker
+pinned: false
+license: mit
+---
 
 # ☀️ AI/ML Renewable Energy Platform
 ## Scalable Power Forecasting & Intelligence for Solar & Wind Operations
@@ -29,21 +38,11 @@ Developed as part of an **AI/ML Research Internship**, this project bridges the 
 ## 📂 Project Structure
 
 ```bash
-ai-ml-renewable-energy-platform/
-├── data/           # Raw and processed datasets
-├── models/         # Serialized model binaries
-├── notebooks/      # EDA and model training logs
-├── metrics/        # Evaluation reports
-├── app.py          # FastAPI application
-├── requirements.txt# Dependencies
-└── README.md       # Project documentation
-
-##📈 Roadmap
-[x] Phase 1: Power Forecasting – Completed.
-
-[ ] Phase 2: Predictive Maintenance – Planned.
-
-[ ] Phase 3: Anomaly Detection – Planned.
-
-##🧑‍💻 Author
-Lalit Chaudhari AI/ML Engineer 
+solarops-ml-platform/
+├── app/
+├── models/
+├── phase_2_predictive_maintenance/
+├── phase_4_mlops/
+├── requirements.txt
+├── Dockerfile
+└── README.md
