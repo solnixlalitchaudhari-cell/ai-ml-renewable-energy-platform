@@ -48,9 +48,11 @@ START_TIME = datetime.utcnow()
 LAST_PREDICTION_TIME = None
 
 # ===============================
-# BASE DIRECTORY
+# BASE DIRECTORY (DOCKER SAFE)
 # ===============================
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..")
+)
 
 # ===============================
 # LOAD MODEL METADATA
@@ -62,6 +64,9 @@ METADATA_PATH = os.path.join(
     "metadata.json"
 )
 
+if not os.path.exists(METADATA_PATH):
+    raise FileNotFoundError(f"Metadata file not found at {METADATA_PATH}")
+
 with open(METADATA_PATH, "r") as f:
     metadata = json.load(f)
 
@@ -70,34 +75,54 @@ FORECAST_MODEL_NAME = metadata["forecasting_model"]
 # ===============================
 # LOAD FORECASTING MODEL
 # ===============================
-forecast_model = joblib.load(
-    os.path.join(BASE_DIR, "models", "forecasting", f"{FORECAST_MODEL_NAME}.pkl")
+forecast_model_path = os.path.join(
+    BASE_DIR,
+    "models",
+    "forecasting",
+    f"{FORECAST_MODEL_NAME}.pkl"
 )
 
-FORECAST_FEATURES = joblib.load(
-    os.path.join(BASE_DIR, "models", "forecasting", "xgb_features_v1.pkl")
+forecast_features_path = os.path.join(
+    BASE_DIR,
+    "models",
+    "forecasting",
+    "xgb_features_v1.pkl"
 )
+
+if not os.path.exists(forecast_model_path):
+    raise FileNotFoundError(f"Forecast model not found at {forecast_model_path}")
+
+if not os.path.exists(forecast_features_path):
+    raise FileNotFoundError(f"Forecast features not found at {forecast_features_path}")
+
+forecast_model = joblib.load(forecast_model_path)
+FORECAST_FEATURES = joblib.load(forecast_features_path)
 
 # ===============================
 # LOAD PdM MODEL
 # ===============================
-pdm_model = joblib.load(
-    os.path.join(
-        BASE_DIR,
-        "phase_2_predictive_maintenance",
-        "models",
-        "pdm_isolation_forest.pkl"
-    )
+pdm_model_path = os.path.join(
+    BASE_DIR,
+    "phase_2_predictive_maintenance",
+    "models",
+    "pdm_isolation_forest.pkl"
 )
 
-pdm_features = joblib.load(
-    os.path.join(
-        BASE_DIR,
-        "phase_2_predictive_maintenance",
-        "models",
-        "pdm_features.pkl"
-    )
+pdm_features_path = os.path.join(
+    BASE_DIR,
+    "phase_2_predictive_maintenance",
+    "models",
+    "pdm_features.pkl"
 )
+
+if not os.path.exists(pdm_model_path):
+    raise FileNotFoundError(f"PdM model not found at {pdm_model_path}")
+
+if not os.path.exists(pdm_features_path):
+    raise FileNotFoundError(f"PdM features not found at {pdm_features_path}")
+
+pdm_model = joblib.load(pdm_model_path)
+pdm_features = joblib.load(pdm_features_path)
 
 # ===============================
 # FASTAPI APP
