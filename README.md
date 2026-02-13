@@ -1,13 +1,3 @@
----
-title: Solarops Ml Platform
-emoji: ⚡
-colorFrom: green
-colorTo: blue
-sdk: docker
-pinned: false
-license: mit
----
-
 # ☀️ AI/ML Renewable Energy Platform
 ## Scalable Power Forecasting & Intelligence for Solar & Wind Operations
 
