@@ -7,6 +7,8 @@ import json
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+import requests
+
 
 # ===============================
 # LOAD ENVIRONMENT VARIABLES
@@ -19,6 +21,12 @@ COST_PER_KWH = float(os.getenv("COST_PER_KWH", 6.5))
 
 if API_KEY is None:
     raise RuntimeError("API_KEY not set in environment")
+
+HF_TOKEN = os.getenv("HF_TOKEN")
+
+if HF_TOKEN is None:
+    raise RuntimeError("HF_TOKEN not set in environment")
+
 
 # ===============================
 # API KEY SECURITY
@@ -55,33 +63,8 @@ BASE_DIR = os.path.abspath(
 )
 
 # ===============================
-# LOAD MODEL METADATA
+# LOAD FORECAST FEATURES
 # ===============================
-METADATA_PATH = os.path.join(
-    BASE_DIR,
-    "phase_4_mlops",
-    "versioning",
-    "metadata.json"
-)
-
-if not os.path.exists(METADATA_PATH):
-    raise FileNotFoundError(f"Metadata file not found at {METADATA_PATH}")
-
-with open(METADATA_PATH, "r") as f:
-    metadata = json.load(f)
-
-FORECAST_MODEL_NAME = metadata["forecasting_model"]
-
-# ===============================
-# LOAD FORECASTING MODEL
-# ===============================
-forecast_model_path = os.path.join(
-    BASE_DIR,
-    "models",
-    "forecasting",
-    f"{FORECAST_MODEL_NAME}.pkl"
-)
-
 forecast_features_path = os.path.join(
     BASE_DIR,
     "models",
@@ -89,14 +72,35 @@ forecast_features_path = os.path.join(
     "xgb_features_v1.pkl"
 )
 
-if not os.path.exists(forecast_model_path):
-    raise FileNotFoundError(f"Forecast model not found at {forecast_model_path}")
-
 if not os.path.exists(forecast_features_path):
     raise FileNotFoundError(f"Forecast features not found at {forecast_features_path}")
 
-forecast_model = joblib.load(forecast_model_path)
 FORECAST_FEATURES = joblib.load(forecast_features_path)
+
+# ===============================
+# DYNAMIC MODEL LOADER (Multi-Site Support)
+# ===============================
+def load_forecast_model(plant_id: int):
+    ft_model_path = os.path.join(
+        BASE_DIR,
+        "models",
+        "forecasting",
+        f"xgb_plant_{plant_id}_ft.pkl"
+    )
+
+    base_model_path = os.path.join(
+        BASE_DIR,
+        "models",
+        "forecasting",
+        "xgb_base_model.pkl"
+    )
+
+    if os.path.exists(ft_model_path):
+        print(f"Loading fine-tuned model for plant {plant_id}")
+        return joblib.load(ft_model_path)
+
+    print("Loading base model")
+    return joblib.load(base_model_path)
 
 # ===============================
 # LOAD PdM MODEL
@@ -137,7 +141,7 @@ app.add_middleware(
 )
 
 # ===============================
-# ROOT (UNPROTECTED)
+# ROOT
 # ===============================
 @app.get("/")
 def root():
@@ -155,8 +159,7 @@ def health_check():
         "status": "healthy",
         "environment": ENV,
         "uptime_seconds": (datetime.utcnow() - START_TIME).total_seconds(),
-        "forecast_model": FORECAST_MODEL_NAME,
-        "forecast_model_loaded": True,
+        "forecast_multi_site_enabled": True,
         "pdm_model_loaded": True,
         "last_prediction_time": (
             LAST_PREDICTION_TIME.isoformat()
@@ -168,6 +171,7 @@ def health_check():
 # INPUT SCHEMAS
 # ===============================
 class SolarInput(BaseModel):
+    plant_id: int
     DC_POWER: float
     hour: int
     day: int
@@ -189,17 +193,29 @@ class OptimizationInput(BaseModel):
     DC_POWER: float
 
 # ===============================
-# PHASE 1 – FORECASTING
+# PHASE 1 – FORECASTING (Multi-Site Enabled)
 # ===============================
 @app.post("/predict-power", dependencies=[Depends(verify_api_key)])
 def predict_power(data: SolarInput):
     global LAST_PREDICTION_TIME
     LAST_PREDICTION_TIME = datetime.utcnow()
 
-    df = pd.DataFrame([data.dict()])
-    df = df.reindex(columns=FORECAST_FEATURES, fill_value=0)
+    model = load_forecast_model(data.plant_id)
 
-    prediction = forecast_model.predict(df)[0]
+    # Create minimal input
+    df = pd.DataFrame([{
+        "plant_id": data.plant_id,
+        "DC_POWER": data.DC_POWER,
+        "hour": data.hour,
+        "day": data.day,
+        "month": data.month
+    }])
+
+    # Align strictly to model features
+    expected_features = model.get_booster().feature_names
+    df = df.reindex(columns=expected_features, fill_value=0)
+
+    prediction = model.predict(df)[0]
     drift_detected = check_drift("DC_POWER", data.DC_POWER)
 
     log_prediction(
@@ -208,10 +224,11 @@ def predict_power(data: SolarInput):
         ac_power=None,
         prediction=float(prediction),
         status="drift_detected" if drift_detected else "success",
-        model_version=FORECAST_MODEL_NAME
+        model_version=f"plant_{data.plant_id}"
     )
 
     return {
+        "plant_id": data.plant_id,
         "prediction": float(prediction),
         "drift_detected": drift_detected
     }
@@ -325,4 +342,159 @@ def business_impact(data: OptimizationInput):
         "roi_assessment": roi_level,
         "executive_recommendation": recommendation,
         "cost_per_kwh_used": COST_PER_KWH
+    }
+
+# ===============================
+# MODEL METRICS
+# ===============================
+
+@app.get("/model-metrics", dependencies=[Depends(verify_api_key)])
+def get_model_metrics():
+    metrics_path = os.path.join(
+        BASE_DIR,
+        "phase_6_evaluation",
+        "evaluation_report.json"
+    )
+    with open(metrics_path) as f:
+        return json.load(f)
+
+import requests
+
+class AskAIInput(BaseModel):
+    plant_id: int
+    question: str
+
+
+@app.post("/ask-ai", dependencies=[Depends(verify_api_key)])
+def ask_ai(data: AskAIInput):
+
+    HF_TOKEN = os.getenv("HF_TOKEN")
+    if not HF_TOKEN:
+        return {"error": "HF_TOKEN not set in environment"}
+
+    # ===============================
+    # Load RAG Data (FULL CONTEXT)
+    # ===============================
+    evaluation_path = os.path.join(BASE_DIR, "phase_6_evaluation", "evaluation_report.json")
+    history_path = os.path.join(BASE_DIR, "phase_6_evaluation", "metrics_history.json")
+    logs_path = os.path.join(BASE_DIR, "phase_4_mlops", "logging", "prediction_logs.json")
+
+    evaluation_data = {}
+    history_data = []
+    log_data = []
+
+    if os.path.exists(evaluation_path):
+        with open(evaluation_path, "r") as f:
+            evaluation_data = json.load(f)
+
+    if os.path.exists(history_path):
+        with open(history_path, "r") as f:
+            history_data = json.load(f)[-3:]
+
+    if os.path.exists(logs_path):
+        with open(logs_path, "r") as f:
+            log_data = json.load(f)[-5:]
+
+    # ===============================
+    # Build STRONG Structured Prompt
+    # ===============================
+    context = f"""
+You are a Renewable Energy AI Expert.
+
+Solar Forecasting Benchmarks:
+- MAE < 2 strong
+- MAPE < 5% excellent
+- R2 > 0.95 high accuracy
+- Improvement > 10% good
+- Residual mean near 0 stable
+
+Plant ID: {data.plant_id}
+
+Current Model Evaluation:
+{json.dumps(evaluation_data)}
+
+Recent Performance Trend:
+{json.dumps(history_data)}
+
+Recent Operational Logs:
+{json.dumps(log_data)}
+
+User Question:
+{data.question}
+
+CRITICAL INSTRUCTIONS:
+- Return ONLY pure JSON.
+- Do NOT use markdown.
+- Do NOT wrap in ```json.
+- Do NOT explain outside JSON.
+- Keep response under 500 tokens.
+- Make executive summary concise and readable.
+
+Required JSON format:
+
+{{
+  "executive_summary": "short 5-7 lines paragraph",
+  "model_health": "Stable / Degrading / Critical",
+  "drift_risk": "Low / Medium / High",
+  "operational_risk": "Low / Medium / High",
+  "financial_impact": "short 3-4 lines",
+  "recommended_action": "short 3-4 lines",
+  "confidence_level": "Low / Medium / High"
+}}
+"""
+
+    headers = {
+        "Authorization": f"Bearer {HF_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "model": "mistralai/Mistral-7B-Instruct-v0.2",
+        "messages": [
+            {
+                "role": "system",
+                "content": "You always return valid JSON only. No markdown. No explanation outside JSON."
+            },
+            {
+                "role": "user",
+                "content": context
+            }
+        ],
+        "max_tokens": 500,
+        "temperature": 0.2
+    }
+
+    try:
+        response = requests.post(
+            "https://router.huggingface.co/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=90
+        )
+
+        if response.status_code != 200:
+            return {
+                "error": "LLM request failed",
+                "status_code": response.status_code,
+                "details": response.text
+            }
+
+        result = response.json()
+        raw_text = result["choices"][0]["message"]["content"].strip()
+
+        # Remove accidental markdown if model still adds it
+        raw_text = raw_text.replace("```json", "").replace("```", "").strip()
+
+        ai_output = json.loads(raw_text)
+
+    except Exception as e:
+        return {
+            "error": "LLM parsing failed",
+            "details": str(e)
+        }
+
+    return {
+        "plant_id": data.plant_id,
+        "question": data.question,
+        "ai_response": ai_output
     }
