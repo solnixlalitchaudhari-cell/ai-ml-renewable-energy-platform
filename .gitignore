@@ -10,3 +10,21 @@ __pycache__/
 *.log
 *.csv
 .DS_Store
+
+
+# Environment
+.env
+
+# Memory & Alerts
+phase_8_agent/ai_memory.json
+phase_11_alerting/alerts.json
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+
+# Docker
+*.pid

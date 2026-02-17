@@ -49,6 +49,11 @@ except ImportError:
     def check_drift(feature_name, value):
         return False
 
+from phase_8_agent.memory import add_memory
+from phase_8_agent.risk_engine import calculate_risk
+from phase_8_agent.alert_system import log_alert
+from phase_8_agent.financial_engine import estimate_financial_risk
+
 # ===============================
 # RUNTIME STATE
 # ===============================
@@ -360,6 +365,29 @@ def get_model_metrics():
 
 import requests
 
+
+def tool_get_model_metrics():
+    path = os.path.join(BASE_DIR, "phase_6_evaluation", "evaluation_report.json")
+    if os.path.exists(path):
+        with open(path, "r") as f:
+            return json.load(f)
+    return {}
+
+def tool_get_recent_logs():
+    path = os.path.join(BASE_DIR, "phase_4_mlops", "logging", "prediction_logs.json")
+    if os.path.exists(path):
+        with open(path, "r") as f:
+            return json.load(f)[-5:]
+    return []
+
+def tool_get_metrics_history():
+    path = os.path.join(BASE_DIR, "phase_6_evaluation", "metrics_history.json")
+    if os.path.exists(path):
+        with open(path, "r") as f:
+            return json.load(f)[-3:]
+    return []
+
+
 class AskAIInput(BaseModel):
     plant_id: int
     question: str
@@ -368,133 +396,32 @@ class AskAIInput(BaseModel):
 @app.post("/ask-ai", dependencies=[Depends(verify_api_key)])
 def ask_ai(data: AskAIInput):
 
-    HF_TOKEN = os.getenv("HF_TOKEN")
-    if not HF_TOKEN:
-        return {"error": "HF_TOKEN not set in environment"}
+    # --- Phase 9 + Phase 10: Full Orchestration (with simulation) ---
+    from phase_9_agent_orchestration.orchestrator import run_orchestration
 
-    # ===============================
-    # Load RAG Data (FULL CONTEXT)
-    # ===============================
-    evaluation_path = os.path.join(BASE_DIR, "phase_6_evaluation", "evaluation_report.json")
-    history_path = os.path.join(BASE_DIR, "phase_6_evaluation", "metrics_history.json")
-    logs_path = os.path.join(BASE_DIR, "phase_4_mlops", "logging", "prediction_logs.json")
-
-    evaluation_data = {}
-    history_data = []
-    log_data = []
-
-    if os.path.exists(evaluation_path):
-        with open(evaluation_path, "r") as f:
-            evaluation_data = json.load(f)
-
-    if os.path.exists(history_path):
-        with open(history_path, "r") as f:
-            history_data = json.load(f)[-3:]
-
-    if os.path.exists(logs_path):
-        with open(logs_path, "r") as f:
-            log_data = json.load(f)[-5:]
-
-    # ===============================
-    # Build STRONG Structured Prompt
-    # ===============================
-    context = f"""
-You are a Renewable Energy AI Expert.
-
-Solar Forecasting Benchmarks:
-- MAE < 2 strong
-- MAPE < 5% excellent
-- R2 > 0.95 high accuracy
-- Improvement > 10% good
-- Residual mean near 0 stable
-
-Plant ID: {data.plant_id}
-
-Current Model Evaluation:
-{json.dumps(evaluation_data)}
-
-Recent Performance Trend:
-{json.dumps(history_data)}
-
-Recent Operational Logs:
-{json.dumps(log_data)}
-
-User Question:
-{data.question}
-
-CRITICAL INSTRUCTIONS:
-- Return ONLY pure JSON.
-- Do NOT use markdown.
-- Do NOT wrap in ```json.
-- Do NOT explain outside JSON.
-- Keep response under 500 tokens.
-- Make executive summary concise and readable.
-
-Required JSON format:
-
-{{
-  "executive_summary": "short 5-7 lines paragraph",
-  "model_health": "Stable / Degrading / Critical",
-  "drift_risk": "Low / Medium / High",
-  "operational_risk": "Low / Medium / High",
-  "financial_impact": "short 3-4 lines",
-  "recommended_action": "short 3-4 lines",
-  "confidence_level": "Low / Medium / High"
-}}
-"""
-
-    headers = {
-        "Authorization": f"Bearer {HF_TOKEN}",
-        "Content-Type": "application/json"
-    }
-
-    payload = {
-        "model": "mistralai/Mistral-7B-Instruct-v0.2",
-        "messages": [
-            {
-                "role": "system",
-                "content": "You always return valid JSON only. No markdown. No explanation outside JSON."
-            },
-            {
-                "role": "user",
-                "content": context
-            }
-        ],
-        "max_tokens": 500,
-        "temperature": 0.2
-    }
-
-    try:
-        response = requests.post(
-            "https://router.huggingface.co/v1/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=90
-        )
-
-        if response.status_code != 200:
-            return {
-                "error": "LLM request failed",
-                "status_code": response.status_code,
-                "details": response.text
-            }
-
-        result = response.json()
-        raw_text = result["choices"][0]["message"]["content"].strip()
-
-        # Remove accidental markdown if model still adds it
-        raw_text = raw_text.replace("```json", "").replace("```", "").strip()
-
-        ai_output = json.loads(raw_text)
-
-    except Exception as e:
-        return {
-            "error": "LLM parsing failed",
-            "details": str(e)
-        }
+    result = run_orchestration(data.plant_id, data.question)
 
     return {
         "plant_id": data.plant_id,
         "question": data.question,
-        "ai_response": ai_output
+        "agent_type": "orchestrated_multi_agent",
+        "ai_response": result
     }
+
+from phase_8_agent.coordinator_agent import run_multi_agent
+
+@app.get("/multi-agent-analysis", dependencies=[Depends(verify_api_key)])
+def multi_agent_analysis():
+
+    metrics_path = os.path.join(
+        BASE_DIR,
+        "phase_6_evaluation",
+        "evaluation_report.json"
+    )
+
+    with open(metrics_path) as f:
+        metrics = json.load(f)
+
+    result = run_multi_agent(metrics)
+
+    return result
