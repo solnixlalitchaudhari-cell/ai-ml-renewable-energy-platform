@@ -11,6 +11,7 @@ def aggregate_responses(
     agent_results: dict,
     intent_info: dict,
     confidence: dict,
+    metrics: dict = None,  # Accept metrics
     is_simulation: bool = False
 ) -> dict:
     """
@@ -20,6 +21,7 @@ def aggregate_responses(
         agent_results: Raw outputs from all activated agents.
         intent_info: Intent classification metadata.
         confidence: Confidence engine output.
+        metrics: specific model metrics (R2, RMSE, etc.)
         is_simulation: Whether this response uses simulated metrics.
 
     Returns:
@@ -56,6 +58,7 @@ def aggregate_responses(
             "label": confidence.get("confidence_label", "UNKNOWN"),
             "breakdown": confidence.get("breakdown", [])
         },
+        "metrics": metrics if metrics else {},  # Include metrics for alert context
         "agent_outputs": {},
         "executive_summary": executive_summary,
         "final_decision": final_decision,

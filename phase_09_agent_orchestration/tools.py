@@ -5,7 +5,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 def get_model_metrics():
-    path = os.path.join(BASE_DIR, "phase_6_evaluation", "evaluation_report.json")
+    path = os.path.join(BASE_DIR, "phase_06_evaluation", "evaluation_report.json")
     if not os.path.exists(path):
         return {"error": "Metrics not found"}
     with open(path, "r") as f:
@@ -13,7 +13,7 @@ def get_model_metrics():
 
 
 def get_recent_logs(limit=5):
-    path = os.path.join(BASE_DIR, "phase_4_mlops", "logging", "prediction_logs.json")
+    path = os.path.join(BASE_DIR, "phase_04_mlops", "logging", "prediction_logs.json")
     if not os.path.exists(path):
         return {"error": "Logs not found"}
     with open(path, "r") as f:

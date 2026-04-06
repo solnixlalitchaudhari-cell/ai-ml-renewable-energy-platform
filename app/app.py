@@ -38,21 +38,21 @@ def verify_api_key(x_api_key: str = Header(..., alias="X-API-KEY")):
 # ===============================
 # LOGGING
 # ===============================
-from phase_4_mlops.logging.logger import log_prediction
+from phase_04_mlops.logging.logger import log_prediction
 
 # ===============================
 # SAFE DRIFT IMPORT
 # ===============================
 try:
-    from phase_4_mlops.drift.drift_detector import check_drift
+    from phase_04_mlops.drift.drift_detector import check_drift
 except ImportError:
     def check_drift(feature_name, value):
         return False
 
-from phase_8_agent.memory import add_memory
-from phase_8_agent.risk_engine import calculate_risk
-from phase_8_agent.alert_system import log_alert
-from phase_8_agent.financial_engine import estimate_financial_risk
+from phase_08_agent.memory import add_memory
+from phase_08_agent.risk_engine import calculate_risk
+from phase_08_agent.alert_system import log_alert
+from phase_08_agent.financial_engine import estimate_financial_risk
 
 # ===============================
 # RUNTIME STATE
@@ -112,14 +112,14 @@ def load_forecast_model(plant_id: int):
 # ===============================
 pdm_model_path = os.path.join(
     BASE_DIR,
-    "phase_2_predictive_maintenance",
+    "phase_02_predictive_maintenance",
     "models",
     "pdm_isolation_forest.pkl"
 )
 
 pdm_features_path = os.path.join(
     BASE_DIR,
-    "phase_2_predictive_maintenance",
+    "phase_02_predictive_maintenance",
     "models",
     "pdm_features.pkl"
 )
@@ -144,6 +144,27 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ===============================
+# PHASE 12 — VECTOR RAG STARTUP
+# ===============================
+try:
+    from phase_12_vector_rag.ingestion_pipeline import run_full_ingestion
+    from phase_12_vector_rag.vector_store import get_stats as vector_get_stats
+    run_full_ingestion()
+except Exception as e:
+    print(f"[Phase 12] Warning: Vector RAG startup failed: {e}")
+
+# ===============================
+# VECTOR STATS ENDPOINT
+# ===============================
+@app.get("/vector-stats", dependencies=[Depends(verify_api_key)])
+def vector_stats():
+    try:
+        from phase_12_vector_rag.vector_store import get_stats
+        return get_stats()
+    except Exception as e:
+        return {"error": str(e)}
 
 # ===============================
 # ROOT
@@ -335,7 +356,7 @@ def business_impact(data: OptimizationInput):
         ac_power=data.AC_POWER,
         prediction=annual_loss,
         status=roi_level.lower(),
-        model_version="phase_5_business_logic_v1"
+        model_version="phase_05_business_logic_v1"
     )
 
     return {
@@ -357,7 +378,7 @@ def business_impact(data: OptimizationInput):
 def get_model_metrics():
     metrics_path = os.path.join(
         BASE_DIR,
-        "phase_6_evaluation",
+        "phase_06_evaluation",
         "evaluation_report.json"
     )
     with open(metrics_path) as f:
@@ -367,21 +388,21 @@ import requests
 
 
 def tool_get_model_metrics():
-    path = os.path.join(BASE_DIR, "phase_6_evaluation", "evaluation_report.json")
+    path = os.path.join(BASE_DIR, "phase_06_evaluation", "evaluation_report.json")
     if os.path.exists(path):
         with open(path, "r") as f:
             return json.load(f)
     return {}
 
 def tool_get_recent_logs():
-    path = os.path.join(BASE_DIR, "phase_4_mlops", "logging", "prediction_logs.json")
+    path = os.path.join(BASE_DIR, "phase_04_mlops", "logging", "prediction_logs.json")
     if os.path.exists(path):
         with open(path, "r") as f:
             return json.load(f)[-5:]
     return []
 
 def tool_get_metrics_history():
-    path = os.path.join(BASE_DIR, "phase_6_evaluation", "metrics_history.json")
+    path = os.path.join(BASE_DIR, "phase_06_evaluation", "metrics_history.json")
     if os.path.exists(path):
         with open(path, "r") as f:
             return json.load(f)[-3:]
@@ -397,7 +418,7 @@ class AskAIInput(BaseModel):
 def ask_ai(data: AskAIInput):
 
     # --- Phase 9 + Phase 10: Full Orchestration (with simulation) ---
-    from phase_9_agent_orchestration.orchestrator import run_orchestration
+    from phase_09_agent_orchestration.orchestrator import run_orchestration
 
     result = run_orchestration(data.plant_id, data.question)
 
@@ -408,14 +429,14 @@ def ask_ai(data: AskAIInput):
         "ai_response": result
     }
 
-from phase_8_agent.coordinator_agent import run_multi_agent
+from phase_08_agent.coordinator_agent import run_multi_agent
 
 @app.get("/multi-agent-analysis", dependencies=[Depends(verify_api_key)])
 def multi_agent_analysis():
 
     metrics_path = os.path.join(
         BASE_DIR,
-        "phase_6_evaluation",
+        "phase_06_evaluation",
         "evaluation_report.json"
     )
 

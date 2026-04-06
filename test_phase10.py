@@ -6,7 +6,7 @@ from phase_10_scenario_engine import (
     recalculate_risk,
     log_simulation
 )
-from phase_9_agent_orchestration.confidence_engine import compute_confidence
+from phase_09_agent_orchestration.confidence_engine import compute_confidence
 
 base = {"metrics": {"r2": 0.9999, "mae": 1.2}}
 

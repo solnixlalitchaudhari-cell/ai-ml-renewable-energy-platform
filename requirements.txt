@@ -1,6 +1,6 @@
 numpy
 pandas
-scikit-learn
+scikit-learn==1.6.1
 xgboost
 joblib
 fastapi
@@ -11,5 +11,8 @@ tensorflow
 python-multipart
 python-dotenv
 requests
+chromadb
+sentence-transformers
+tf-keras
 
 

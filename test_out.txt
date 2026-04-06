@@ -1,0 +1,59 @@
+TEST 1: Embedding model
+[Phase 12 RAG] Loading embedding model: all-MiniLM-L6-v2 ...
+[Phase 12 RAG] Embedding model loaded.
+  single embed: 384 dims
+  batch embed: 2 vectors of 384 dims
+  PASSED
+
+TEST 2: Document schemas
+  AlertRecord id: 4515e9efb417f756
+  type: AlertRecord, plant_id: 1
+  duplicate detection: same content -> same ID [OK]
+  PASSED
+
+TEST 3: Vector store operations
+  added: 3 documents
+  duplicate add: 0 (correctly prevented)
+  PASSED
+
+TEST 4: Metadata-filtered query
+  unfiltered results: 3
+  plant_id=1 results: 2
+  AlertRecord results: 2
+  PASSED
+
+TEST 5: Vector store stats
+  total: 3
+  types: {'AlertRecord': 2, 'OperationalLog': 1}
+  health: healthy
+  PASSED
+
+TEST 6: Retriever with relevance scoring
+  retrieved: 1 docs
+  top relevance: 0.1175
+  top content preview: CRITICAL P0 alert: inverter failure at plant 1...
+  PASSED
+
+TEST 7: RAG engine full pipeline
+[Phase 12 RAG] Retrieved 2 docs | avg_relevance=0.24 | confidence_boost=0.0353
+  doc_count: 2
+  confidence_boost: 0.0353
+  context length: 167 chars
+  context preview:
+    [1] (AlertRecord | relevance: 43%)
+    CRITICAL P0 alert: inverter failure at plant 1
+
+[2] (AlertRecord | relevance: 4%)...
+  PASSED
+
+TEST 8: Graceful handling of unrelated query
+[Phase 12 RAG] No relevant documents found for query.
+  doc_count: 0
+  confidence_boost: 0.0
+  PASSED
+
+=======================================================
+ALL TESTS PASSED — Phase 12 Production RAG is operational
+=======================================================
+
+---STDERR---

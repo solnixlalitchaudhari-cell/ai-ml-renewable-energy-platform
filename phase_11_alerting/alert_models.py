@@ -19,6 +19,7 @@ class Alert:
     priority: str = "P2"
     plant_id: int = 0
     message: str = ""
+    context: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         """Convert Alert to a serializable dictionary."""
@@ -29,5 +30,6 @@ class Alert:
             "decision": self.decision,
             "priority": self.priority,
             "plant_id": self.plant_id,
-            "message": self.message
+            "message": self.message,
+            "context": self.context
         }

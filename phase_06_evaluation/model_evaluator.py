@@ -158,7 +158,7 @@ report = {
 # ===============================
 # SAVE LATEST REPORT
 # ===============================
-REPORT_PATH = os.path.join(BASE_DIR, "phase_6_evaluation", "evaluation_report.json")
+REPORT_PATH = os.path.join(BASE_DIR, "phase_06_evaluation", "evaluation_report.json")
 
 with open(REPORT_PATH, "w") as f:
     json.dump(report, f, indent=4)
@@ -166,7 +166,7 @@ with open(REPORT_PATH, "w") as f:
 # ===============================
 # APPEND TO METRICS HISTORY
 # ===============================
-HISTORY_PATH = os.path.join(BASE_DIR, "phase_6_evaluation", "metrics_history.json")
+HISTORY_PATH = os.path.join(BASE_DIR, "phase_06_evaluation", "metrics_history.json")
 
 if os.path.exists(HISTORY_PATH):
     with open(HISTORY_PATH, "r") as f:

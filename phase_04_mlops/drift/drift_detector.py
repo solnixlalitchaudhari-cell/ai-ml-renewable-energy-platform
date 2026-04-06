@@ -1,14 +1,9 @@
 import json
 import os
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-STATS_PATH = os.path.join(
-    BASE_DIR,
-    "phase_4_mlops",
-    "drift",
-    "training_stats.json"
-)
+STATS_PATH = os.path.join(BASE_DIR, "training_stats.json")
 
 with open(STATS_PATH, "r") as f:
     TRAINING_STATS = json.load(f)

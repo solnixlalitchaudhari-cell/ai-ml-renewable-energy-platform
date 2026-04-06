@@ -2,7 +2,7 @@ import csv
 import os
 from datetime import datetime
 
-LOG_DIR = "phase_4_mlops/logs"
+LOG_DIR = "phase_04_mlops/logs"
 os.makedirs(LOG_DIR, exist_ok=True)
 
 LOG_FILE = os.path.join(LOG_DIR, "predictions_log.csv")

@@ -7,7 +7,7 @@ BASE_DIR = os.path.abspath(
 
 
 def get_model_metrics():
-    path = os.path.join(BASE_DIR, "phase_6_evaluation", "evaluation_report.json")
+    path = os.path.join(BASE_DIR, "phase_06_evaluation", "evaluation_report.json")
     if not os.path.exists(path):
         return {"error": "metrics not found"}
     with open(path) as f:
@@ -15,7 +15,7 @@ def get_model_metrics():
 
 
 def get_drift_status():
-    path = os.path.join(BASE_DIR, "phase_4_mlops", "drift", "training_stats.json")
+    path = os.path.join(BASE_DIR, "phase_04_mlops", "drift", "training_stats.json")
     if not os.path.exists(path):
         return {"error": "drift stats not found"}
     with open(path) as f:
@@ -23,7 +23,7 @@ def get_drift_status():
 
 
 def get_recent_logs():
-    path = os.path.join(BASE_DIR, "phase_4_mlops", "logging", "prediction_logs.json")
+    path = os.path.join(BASE_DIR, "phase_04_mlops", "logging", "prediction_logs.json")
     if not os.path.exists(path):
         return {"error": "logs not found"}
     with open(path) as f:
@@ -35,7 +35,7 @@ def load_evaluation_data():
 
 
 def load_metrics_history():
-    path = os.path.join(BASE_DIR, "phase_6_evaluation", "metrics_history.json")
+    path = os.path.join(BASE_DIR, "phase_06_evaluation", "metrics_history.json")
     if os.path.exists(path):
         with open(path, "r") as f:
             return json.load(f)[-3:]

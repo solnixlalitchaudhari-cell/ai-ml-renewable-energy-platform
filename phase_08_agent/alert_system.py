@@ -4,7 +4,7 @@ from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-ALERT_PATH = os.path.join(BASE_DIR, "phase_8_agent", "alerts.json")
+ALERT_PATH = os.path.join(BASE_DIR, "phase_08_agent", "alerts.json")
 
 def log_alert(alert_data):
     if os.path.exists(ALERT_PATH):

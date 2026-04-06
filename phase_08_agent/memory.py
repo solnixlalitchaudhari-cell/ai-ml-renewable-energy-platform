@@ -3,7 +3,7 @@ import json
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-MEMORY_PATH = os.path.join(BASE_DIR, "phase_8_agent", "ai_memory.json")
+MEMORY_PATH = os.path.join(BASE_DIR, "phase_08_agent", "ai_memory.json")
 
 def load_memory():
     if os.path.exists(MEMORY_PATH):

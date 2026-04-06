@@ -29,6 +29,7 @@ def evaluate_alert(orchestration_result: dict, plant_id: int) -> dict:
     severity_info = determine_severity(orchestration_result)
     severity = severity_info["severity"]
     reason = severity_info["reason"]
+    context = severity_info.get("context", {})
 
     # Step 2 — Build alert object
     alert = Alert(
@@ -36,7 +37,8 @@ def evaluate_alert(orchestration_result: dict, plant_id: int) -> dict:
         decision=orchestration_result.get("final_decision", ""),
         priority=orchestration_result.get("priority", "P2"),
         plant_id=plant_id,
-        message=reason
+        message=reason,
+        context=context
     )
 
     # Step 3 — Trigger based on severity
@@ -60,7 +62,8 @@ def evaluate_alert(orchestration_result: dict, plant_id: int) -> dict:
         "alert_type": alert_type,
         "reason": reason,
         "alert_id": alert.alert_id,
-        "timestamp": alert.timestamp
+        "timestamp": alert.timestamp,
+        "context": context
     }
 
 

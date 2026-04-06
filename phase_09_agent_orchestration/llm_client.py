@@ -19,15 +19,30 @@ def generate_summary(prompt: str) -> str:
         LLM-generated response string.
     """
     try:
-        response = requests.post(
-            "http://host.docker.internal:11434/api/generate",
-            json={
-                "model": "mistral",
-                "prompt": prompt,
-                "stream": False
-            },
-            timeout=60
-        )
+        # Try Docker-internal host first
+        url = "http://host.docker.internal:11434/api/generate"
+        try:
+            response = requests.post(
+                url,
+                json={
+                    "model": "mistral",
+                    "prompt": prompt,
+                    "stream": False
+                },
+                timeout=30
+            )
+        except requests.exceptions.RequestException:
+            # Fallback to localhost for local testing
+            url = "http://localhost:11434/api/generate"
+            response = requests.post(
+                url,
+                json={
+                    "model": "mistral",
+                    "prompt": prompt,
+                    "stream": False
+                },
+                timeout=30
+            )
 
         data = response.json()
         return data.get("response", "LLM returned empty response")
